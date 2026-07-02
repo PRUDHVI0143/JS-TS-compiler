@@ -1,61 +1,87 @@
-# JS-TS Compiler
+# 🚀 JS-TS Compiler
 
-> A lightweight compiler built in **JavaScript** and **TypeScript** that demonstrates the fundamental stages of compiler design, from lexical analysis to code generation. This project serves as both an educational resource for learning compiler internals and a foundation for building language processing tools.
+> A lightweight compiler built with **JavaScript** and **TypeScript** that demonstrates the complete compiler pipeline—from lexical analysis to JavaScript code generation. Designed for learning compiler internals, experimenting with language design, and building language-processing tools.
+
+<p align="center">
+  <img src="https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript" />
+  <img src="https://img.shields.io/badge/Node.js-16+-green?logo=node.js" />
+  <img src="https://img.shields.io/badge/License-MIT-yellow" />
+  <img src="https://img.shields.io/badge/Status-Active-success" />
+</p>
 
 ---
 
-## 📖 Summary
+## 🌐 Live Demo
 
-**JS-TS Compiler** is a compiler implementation designed to showcase how modern programming languages are processed internally. It converts source code into executable output through multiple compilation stages, including tokenization, parsing, Abstract Syntax Tree (AST) generation, semantic analysis, and code generation.
+Explore the compiler in your browser:
 
-The project emphasizes clean architecture, modular design, and readability, making it suitable for students, developers, and anyone interested in compiler construction. Whether you're learning how compilers work or experimenting with language features, this project provides a practical implementation of core compiler concepts.
+👉 **https://codesketchbook.vercel.app/**
 
 ---
 
-## ✨ Features
+## 📖 Overview
+
+**JS-TS Compiler** is an educational compiler implementation that demonstrates how modern programming languages are processed internally.
+
+It transforms source code into executable JavaScript through a series of well-defined compilation stages:
+
+* 🔤 Lexical Analysis (Tokenization)
+* 🌳 Parsing
+* 📑 Abstract Syntax Tree (AST) Construction
+* ✅ Semantic Analysis
+* ⚡ JavaScript Code Generation
+
+The project focuses on **clean architecture**, **modular design**, and **readable implementation**, making it an excellent learning resource for students, developers, and anyone interested in compiler construction.
+
+---
+
+# ✨ Features
 
 * 🔤 Lexical Analysis (Lexer)
-* 🌳 Abstract Syntax Tree (AST) Generation
-* 📑 Syntax Parsing
+* 🌳 AST Generation
+* 📑 Recursive Descent Parser
 * ✅ Semantic Analysis
 * ⚡ JavaScript & TypeScript Support
-* 🛠️ Error Detection and Reporting
-* 📦 Modular Compiler Architecture
+* 🛠️ Detailed Error Detection & Reporting
+* 📦 Modular Architecture
 * 🚀 Command-Line Interface (CLI)
-* 📚 Educational and Beginner Friendly
-* 🔄 Extensible Design for Future Enhancements
+* 📚 Beginner Friendly
+* 🔄 Easily Extensible Design
 
 ---
 
-## 🏗️ Compiler Workflow
+# 🏗️ Compiler Pipeline
 
-```
-Source Code
-     │
-     ▼
- Lexer (Tokenizer)
-     │
-     ▼
- Parser
-     │
-     ▼
- Abstract Syntax Tree (AST)
-     │
-     ▼
- Semantic Analysis
-     │
-     ▼
- Code Generation
-     │
-     ▼
- Output JavaScript
+```text
+           Source Code
+                │
+                ▼
+      Lexical Analysis (Lexer)
+                │
+                ▼
+             Token Stream
+                │
+                ▼
+               Parser
+                │
+                ▼
+      Abstract Syntax Tree
+                │
+                ▼
+       Semantic Analysis
+                │
+                ▼
+        Code Generation
+                │
+                ▼
+        JavaScript Output
 ```
 
 ---
 
-## 📂 Project Structure
+# 📂 Project Structure
 
-```
+```text
 JS-TS-compiler/
 │
 ├── src/
@@ -76,30 +102,30 @@ JS-TS-compiler/
 
 ---
 
-## 🚀 Getting Started
+# 🚀 Getting Started
 
-### Prerequisites
+## Prerequisites
 
-* Node.js (v16 or later)
+* Node.js **v16+**
 * npm
 
 ---
 
 ## 📥 Installation
 
-Clone the repository:
+Clone the repository
 
 ```bash
 git clone https://github.com/PRUDHVI0143/JS-TS-compiler.git
 ```
 
-Navigate into the project:
+Navigate into the project
 
 ```bash
 cd JS-TS-compiler
 ```
 
-Install dependencies:
+Install dependencies
 
 ```bash
 npm install
@@ -107,21 +133,21 @@ npm install
 
 ---
 
-## ▶️ Running the Project
+# ▶️ Usage
 
-Development mode:
+### Development
 
 ```bash
 npm run dev
 ```
 
-Build the project:
+### Build
 
 ```bash
 npm run build
 ```
 
-Run the compiled output:
+### Run
 
 ```bash
 npm start
@@ -129,9 +155,9 @@ npm start
 
 ---
 
-## 💻 Example
+# 💻 Example
 
-### Input (TypeScript)
+## Input (TypeScript)
 
 ```ts
 function greet(name: string): string {
@@ -141,7 +167,7 @@ function greet(name: string): string {
 console.log(greet("Compiler"));
 ```
 
-### Output (JavaScript)
+## Output (JavaScript)
 
 ```js
 function greet(name) {
@@ -153,27 +179,31 @@ console.log(greet("Compiler"));
 
 ---
 
-## ⚙️ Compilation Stages
+# ⚙️ Compilation Stages
 
-### 1. Lexical Analysis
+## 1️⃣ Lexical Analysis
 
-The lexer scans source code character by character and converts it into meaningful tokens such as:
+The lexer scans source code character by character and converts it into a stream of meaningful tokens.
+
+Supported token types include:
 
 * Keywords
 * Identifiers
+* Numbers
+* Strings
 * Operators
-* Literals
 * Symbols
+* Punctuation
 
-Example:
+Example
 
-```
+```ts
 let x = 10;
 ```
 
 becomes
 
-```
+```text
 LET
 IDENTIFIER(x)
 ASSIGN
@@ -183,19 +213,19 @@ SEMICOLON
 
 ---
 
-### 2. Parsing
+## 2️⃣ Parsing
 
-The parser validates the token stream against the language grammar and builds an Abstract Syntax Tree (AST).
+The parser validates the token stream according to the language grammar and constructs an Abstract Syntax Tree (AST).
 
 ---
 
-### 3. AST Generation
+## 3️⃣ AST Generation
 
-The AST provides a structured representation of the source program.
+The AST is a structured representation of the source program.
 
-Example:
+Example
 
-```
+```text
 BinaryExpression
 ├── Identifier(x)
 └── NumberLiteral(10)
@@ -203,38 +233,38 @@ BinaryExpression
 
 ---
 
-### 4. Semantic Analysis
+## 4️⃣ Semantic Analysis
 
-This stage verifies:
+The semantic analyzer performs:
 
-* Variable declarations
-* Type compatibility
+* Variable declaration validation
+* Type checking
 * Scope resolution
-* Invalid identifiers
-* Semantic correctness
+* Undefined identifier detection
+* Semantic correctness checks
 
 ---
 
-### 5. Code Generation
+## 5️⃣ Code Generation
 
-The final stage traverses the AST and generates executable JavaScript output.
-
----
-
-## 📦 Available Scripts
-
-| Command         | Description             |
-| --------------- | ----------------------- |
-| `npm install`   | Install dependencies    |
-| `npm run dev`   | Start development mode  |
-| `npm run build` | Build the compiler      |
-| `npm start`     | Execute compiled output |
-| `npm run test`  | Run tests               |
-| `npm run lint`  | Lint project files      |
+The final stage traverses the AST and emits executable JavaScript code.
 
 ---
 
-## 🛠️ Technologies Used
+# 📦 Available Scripts
+
+| Command         | Description                  |
+| --------------- | ---------------------------- |
+| `npm install`   | Install project dependencies |
+| `npm run dev`   | Start development mode       |
+| `npm run build` | Compile the project          |
+| `npm start`     | Execute compiled output      |
+| `npm run test`  | Run test suite               |
+| `npm run lint`  | Lint the source code         |
+
+---
+
+# 🛠️ Tech Stack
 
 * TypeScript
 * JavaScript
@@ -246,72 +276,94 @@ The final stage traverses the AST and generates executable JavaScript output.
 
 ---
 
-## 🎯 Learning Objectives
+# 🎯 Learning Objectives
 
-This project demonstrates:
+This project demonstrates practical implementations of:
 
 * Compiler Design
-* Parsing Techniques
-* AST Construction
-* Tree Traversal
+* Lexical Analysis
+* Recursive Descent Parsing
+* Abstract Syntax Trees (AST)
 * Semantic Analysis
+* Tree Traversal
 * Code Generation
 * Language Processing
 * TypeScript Internals
 
 ---
 
-## 🚧 Future Improvements
+# 🚧 Roadmap
 
-* Support Classes
+Future enhancements include:
+
+* Classes
 * Interfaces
 * Enums
 * Generics
 * Type Inference
-* Source Maps
 * Optimizer
 * Constant Folding
 * Dead Code Elimination
-* Better Error Recovery
-* Plugin System
+* Source Maps
 * Incremental Compilation
+* Plugin System
+* Better Error Recovery
 
 ---
 
-## 🤝 Contributing
+# 🤝 Contributing
 
-Contributions are welcome.
+Contributions are welcome!
 
-1. Fork the repository.
-2. Create a new branch.
-3. Commit your changes.
-4. Push to your branch.
-5. Open a Pull Request.
+1. Fork the repository
+2. Create a feature branch
+
+```bash
+git checkout -b feature/my-feature
+```
+
+3. Commit your changes
+
+```bash
+git commit -m "Add amazing feature"
+```
+
+4. Push your branch
+
+```bash
+git push origin feature/my-feature
+```
+
+5. Open a Pull Request
 
 ---
 
-## 📄 License
+# 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the **MIT License**.
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 **Prudhvi**
 
 GitHub: https://github.com/PRUDHVI0143
 
+Portfolio / Live Demo:
+
+**https://codesketchbook.vercel.app/**
+
 ---
 
-## ⭐ Support
+# ⭐ Show Your Support
 
-If you found this project useful:
+If you found this project useful, consider:
 
-* ⭐ Star the repository
-* 🍴 Fork it
-* 🐞 Report issues
-* 💡 Suggest improvements
-* 🤝 Contribute to development
+* ⭐ Starring the repository
+* 🍴 Forking the project
+* 🐞 Reporting issues
+* 💡 Suggesting new features
+* 🤝 Contributing to development
 
-Every contribution helps improve the project and makes it more useful for the developer community.
+Every contribution helps make this project better for the developer community.
