@@ -225,7 +225,7 @@
             isResizing = true;
             resizeGutter.classList.add('active');
             document.body.style.cursor = 'col-resize';
-            // Disable pointer events in editor to prevent iframe glitching during drag
+            document.body.style.userSelect = 'none'; // Prevent text highlighting glitch
             editor.setOption("readOnly", "nocursor");
         });
 
@@ -244,6 +244,7 @@
                 isResizing = false;
                 resizeGutter.classList.remove('active');
                 document.body.style.cursor = 'default';
+                document.body.style.userSelect = ''; // Restore selection
                 editor.setOption("readOnly", false);
                 editor.refresh(); // Refresh CodeMirror to recalculate layout
             }
@@ -315,36 +316,70 @@
             output.scrollTop = output.scrollHeight;
         }
 
+        function safeStringify(obj) {
+            if (typeof obj === 'string') return obj;
+            if (typeof obj === 'undefined') return 'undefined';
+            if (obj === null) return 'null';
+            if (typeof obj === 'function') return obj.toString();
+            if (typeof obj === 'bigint') return obj.toString() + 'n';
+            if (obj instanceof Error) return obj.stack || obj.message;
+            try {
+                const seen = new WeakSet();
+                return JSON.stringify(obj, (key, value) => {
+                    if (typeof value === 'object' && value !== null) {
+                        if (seen.has(value)) return '[Circular]';
+                        seen.add(value);
+                    }
+                    if (typeof value === 'bigint') return value.toString() + 'n';
+                    if (typeof value === 'function') return '[Function]';
+                    if (value instanceof Error) return value.stack || value.message;
+                    return value;
+                }, 2);
+            } catch (e) {
+                return String(obj);
+            }
+        }
+
         const originalLog = console.log;
         console.log = function(...args) {
             originalLog(...args);
-            const content = args.map(arg => 
-                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
-            ).join(' ');
-            appendOutput(content, 'log');
+            appendOutput(args.map(safeStringify).join(' '), 'log');
         };
 
         const originalError = console.error;
         console.error = function(...args) {
             originalError(...args);
-            appendOutput(args.join(' '), 'error');
+            appendOutput(args.map(safeStringify).join(' '), 'error');
         };
 
         const originalWarn = console.warn;
         console.warn = function(...args) {
             originalWarn(...args);
-            appendOutput(args.join(' '), 'warn');
+            appendOutput(args.map(safeStringify).join(' '), 'warn');
         };
 
         const originalInfo = console.info;
         console.info = function(...args) {
             originalInfo(...args);
-            appendOutput(args.join(' '), 'info');
+            appendOutput(args.map(safeStringify).join(' '), 'info');
         };
 
         clearConsoleBtn.addEventListener('click', () => {
             output.innerHTML = '';
         });
+
+        // Function to extract line number from error stack
+        function extractLineInfo(stack) {
+            let lineInfo = '';
+            let match = stack.match(/<anonymous>:(\d+):\d+/);
+            if (!match) match = stack.match(/Function:(\d+):\d+/);
+            if (match) {
+                // Adjust by 3 lines due to 'return (async () => { \n' wrapper
+                const lineNum = Math.max(1, parseInt(match[1], 10) - 3);
+                lineInfo = `[Line ${lineNum}] `;
+            }
+            return lineInfo;
+        }
 
         runBtn.addEventListener('click', () => {
             const separator = document.createElement('div');
@@ -362,21 +397,23 @@
                     jsCode = ts.transpile(code);
                 }
                 
-                const result = new Function(jsCode)();
-                if (result !== undefined) {
-                    appendOutput(`Result: ${result}`, 'return');
+                // Wrap in Async IIFE to support top-level await
+                const wrappedCode = `return (async () => { \n${jsCode}\n })()`;
+                const result = new Function(wrappedCode)();
+                
+                if (result instanceof Promise) {
+                    result.then(val => {
+                        if (val !== undefined) appendOutput(`Result: ${safeStringify(val)}`, 'return');
+                    }).catch(err => {
+                        // Throw to global unhandledrejection listener
+                        setTimeout(() => { throw err; }, 0);
+                    });
+                } else if (result !== undefined) {
+                    appendOutput(`Result: ${safeStringify(result)}`, 'return');
                 }
             } catch (err) {
-                let lineInfo = '';
-                if (err.stack) {
-                    let match = err.stack.match(/<anonymous>:(\d+):\d+/);
-                    if (!match) match = err.stack.match(/Function:(\d+):\d+/);
-                    if (match) {
-                        const lineNum = Math.max(1, parseInt(match[1], 10) - 2);
-                        lineInfo = `[Line ${lineNum}]`;
-                    }
-                }
-                appendOutput(`Oops! ${lineInfo} - ${err.message}`, 'error');
+                const lineInfo = err.stack ? extractLineInfo(err.stack) : '';
+                appendOutput(`Oops! ${lineInfo}${err.message}`, 'error');
             }
         });
 
@@ -385,20 +422,26 @@
         });
 
         window.addEventListener('unhandledrejection', function(event) {
-            appendOutput(`Oops! Unhandled Promise - ${event.reason}`, 'error');
+            const reason = event.reason;
+            let lineInfo = (reason && reason.stack) ? extractLineInfo(reason.stack) : '';
+            appendOutput(`Oops! Unhandled Promise - ${lineInfo}${reason.message || reason}`, 'error');
         });
 
         // --- Storage Logic ---
         function loadSnippetsList() {
-            const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
-            while(loadSelect.options.length > 1) {
-                loadSelect.remove(1);
-            }
-            for (const name in snippets) {
-                const opt = document.createElement('option');
-                opt.value = name;
-                opt.textContent = name;
-                loadSelect.appendChild(opt);
+            try {
+                const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
+                while(loadSelect.options.length > 1) {
+                    loadSelect.remove(1);
+                }
+                for (const name in snippets) {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    loadSelect.appendChild(opt);
+                }
+            } catch (e) {
+                console.warn('Local storage is disabled or unavailable.');
             }
         }
 
@@ -409,28 +452,36 @@
                 return;
             }
             
-            const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
-            snippets[name] = {
-                code: editor.getValue(),
-                lang: langSelect.value
-            };
-            
-            localStorage.setItem('code_snippets', JSON.stringify(snippets));
-            loadSnippetsList();
-            alert(`Note "${name}" saved in your sketchbook!`);
+            try {
+                const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
+                snippets[name] = {
+                    code: editor.getValue(),
+                    lang: langSelect.value
+                };
+                
+                localStorage.setItem('code_snippets', JSON.stringify(snippets));
+                loadSnippetsList();
+                alert(`Note "${name}" saved in your sketchbook!`);
+            } catch (e) {
+                alert('Failed to save. Local storage might be disabled in your browser.');
+            }
         });
 
         loadSelect.addEventListener('change', (e) => {
             const name = e.target.value;
             if (!name) return;
             
-            const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
-            const snippet = snippets[name];
-            
-            if (snippet) {
-                editor.setValue(snippet.code);
-                langSelect.value = snippet.lang;
-                snippetNameInput.value = name;
+            try {
+                const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
+                const snippet = snippets[name];
+                
+                if (snippet) {
+                    editor.setValue(snippet.code);
+                    langSelect.value = snippet.lang;
+                    snippetNameInput.value = name;
+                }
+            } catch (e) {
+                // Ignore
             }
         });
 
@@ -442,13 +493,17 @@
             }
 
             if (confirm(`Are you sure you want to erase "${name}"?`)) {
-                const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
-                delete snippets[name];
-                localStorage.setItem('code_snippets', JSON.stringify(snippets));
-                loadSnippetsList();
-                
-                loadSelect.value = '';
-                snippetNameInput.value = '';
+                try {
+                    const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
+                    delete snippets[name];
+                    localStorage.setItem('code_snippets', JSON.stringify(snippets));
+                    loadSnippetsList();
+                    
+                    loadSelect.value = '';
+                    snippetNameInput.value = '';
+                } catch (e) {
+                    alert('Failed to delete. Local storage might be disabled.');
+                }
             }
         });
 
