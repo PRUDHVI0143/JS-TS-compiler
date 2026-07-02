@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Code Playground</title>
+    
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    
+    <!-- Google Fonts for Sketch Look -->
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Fira+Code&display=swap" rel="stylesheet">
+    
+    <!-- Our Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Prettier Formatting -->
+    <script src="https://unpkg.com/prettier@2.8.8/standalone.js"></script>
+    <script src="https://unpkg.com/prettier@2.8.8/parser-babel.js"></script>
+    <script src="https://unpkg.com/prettier@2.8.8/parser-typescript.js"></script>
+    
+    <!-- Load TypeScript Compiler -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typescript/5.3.3/typescript.min.js"></script>
+
+    <!-- CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Code Sketchbook</h1>
+        
+        <div class="controls sketchy-border">
+            <div class="controls-left">
+                <select id="language-select" class="sketchy-element">
+                    <option value="javascript">JavaScript</option>
+                    <option value="typescript">TypeScript</option>
+                </select>
+                
+                <div class="storage-controls">
+                    <input type="text" id="snippet-name" class="sketchy-element" placeholder="Snippet Name">
+                    <button id="save-btn" class="secondary-btn sketchy-element">Save Note</button>
+                    <select id="load-select" class="sketchy-element">
+                        <option value="">Load Note...</option>
+                    </select>
+                    <button id="delete-btn" class="danger-btn sketchy-element">Erase</button>
+                </div>
+            </div>
+            
+            <div class="controls-right" style="position: relative;">
+                <button id="settings-btn" class="icon-btn sketchy-element">⚙️ Settings</button>
+                
+                <!-- Settings Dropdown Panel -->
+                <div id="settings-panel" class="sketchy-border hidden">
+                    <h3 style="margin-bottom: 10px; border-bottom: 2px dashed var(--separator-color); padding-bottom: 5px;">Preferences</h3>
+                    
+                    <button id="theme-toggle" class="sketchy-element icon-btn" style="width: 100%; margin-bottom: 15px; padding: 10px;">🌙 Dark Mode</button>
+                    
+                    <div class="setting-item">
+                        <label>Font:</label>
+                        <select id="font-family-select" class="sketchy-element">
+                            <option value="'Fira Code', monospace">Fira Code</option>
+                            <option value="'Consolas', monospace">Consolas</option>
+                            <option value="'Courier New', monospace">Courier New</option>
+                            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-item" style="margin-top: 15px;">
+                        <label>Size:</label>
+                        <input type="number" id="font-size-input" class="sketchy-element" value="15" min="10" max="30">
+                    </div>
+
+                    <div class="setting-item" style="margin-top: 15px; border-top: 1px dashed var(--separator-color); padding-top: 10px;">
+                        <label>Auto-Run:</label>
+                        <input type="checkbox" id="auto-run-checkbox">
+                    </div>
+
+                    <div class="setting-item" style="margin-top: 15px; border-top: 1px dashed var(--separator-color); padding-top: 10px; flex-direction: column; align-items: flex-start; gap: 5px;">
+                        <label>External Library (CDN URL):</label>
+                        <input type="text" id="ext-lib-input" class="sketchy-element" placeholder="e.g. https://cdn.jsdelivr.net/npm/lodash" style="width: 100%;">
+                        <button id="load-lib-btn" class="secondary-btn sketchy-element" style="width: 100%; margin-top: 5px; padding: 5px;">Inject Library</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-container">
+            <!-- Code Editor Panel -->
+            <div class="editor-wrapper sketchy-border" id="editor-panel">
+                <div class="panel-header">
+                    <span>Code Editor</span>
+                    <div>
+                        <button id="format-btn" class="icon-btn sketchy-element" title="Auto-format code">🪄 Format</button>
+                        <button id="copy-btn" class="icon-btn sketchy-element" title="Copy code to clipboard">📋 Copy</button>
+                        <button id="download-btn" class="icon-btn sketchy-element" title="Download code as file">💾 Save</button>
+                    </div>
+                </div>
+                <div class="cm-container">
+                    <textarea id="code-editor"></textarea>
+                </div>
+            </div>
+            
+            <!-- Resizable Gutter -->
+            <div class="resize-gutter" id="resize-gutter"></div>
+
+            <!-- Output Console Panel -->
+            <div class="output-container sketchy-border" id="output-panel">
+                <div class="panel-header">
+                    <span>Console Log</span>
+                    <button id="clear-console-btn" class="icon-btn sketchy-element">Clear</button>
+                </div>
+                <div id="output"></div>
+            </div>
+        </div>
+        
+        <button id="run-btn" class="primary-btn sketchy-border sketchy-element">Execute Code</button>
+    </div>
+    
+    <script>
+        const output = document.getElementById('output');
+        const runBtn = document.getElementById('run-btn');
+        const langSelect = document.getElementById('language-select');
+        const clearConsoleBtn = document.getElementById('clear-console-btn');
+        
+        const saveBtn = document.getElementById('save-btn');
+        const deleteBtn = document.getElementById('delete-btn');
+        const loadSelect = document.getElementById('load-select');
+        const snippetNameInput = document.getElementById('snippet-name');
+
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const themeToggle = document.getElementById('theme-toggle');
+        const fontSelect = document.getElementById('font-family-select');
+        const fontSizeInput = document.getElementById('font-size-input');
+
+        // Toggle Settings Panel
+        settingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.toggle('hidden');
+        });
+
+        // Close settings panel when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!settingsBtn.contains(e.target) && !settingsPanel.contains(e.target)) {
+                settingsPanel.classList.add('hidden');
+            }
+        });
+
+        // Initialize CodeMirror
+        const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+            mode: "javascript",
+            theme: "default",
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            tabSize: 4,
+            indentUnit: 4
+        });
+        
+        editor.setSize("100%", "100%");
+
+        if (!editor.getValue()) {
+            editor.setValue("// Sketch out some code here...\n\nconst msg = 'Drawing in code!';\nconsole.log(msg);");
+        }
+
+        // --- Formatting Logic ---
+        document.getElementById('format-btn').addEventListener('click', () => {
+            try {
+                const code = editor.getValue();
+                const formatted = prettier.format(code, {
+                    parser: langSelect.value === 'typescript' ? 'typescript' : 'babel',
+                    plugins: prettierPlugins,
+                    singleQuote: true,
+                    tabWidth: 4,
+                });
+                editor.setValue(formatted);
+                appendOutput('🪄 Code beautifully formatted!', 'info');
+            } catch (err) {
+                appendOutput(`❌ Formatting Error: ${err.message}`, 'error');
+            }
+        });
+
+        // --- Auto-Run Logic ---
+        const autoRunCheckbox = document.getElementById('auto-run-checkbox');
+        let autoRunTimeout;
+        editor.on('change', () => {
+            if (autoRunCheckbox.checked) {
+                clearTimeout(autoRunTimeout);
+                autoRunTimeout = setTimeout(() => {
+                    runBtn.click();
+                }, 1000); // 1 second debounce
+            }
+        });
+
+        // --- Copy & Download Logic ---
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            navigator.clipboard.writeText(editor.getValue()).then(() => {
+                alert('Code copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+            });
+        });
+
+        document.getElementById('download-btn').addEventListener('click', () => {
+            const blob = new Blob([editor.getValue()], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const ext = langSelect.value === 'typescript' ? 'ts' : 'js';
+            a.download = `sketchbook-snippet.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // --- Resizable Panels Logic ---
+        const resizeGutter = document.getElementById('resize-gutter');
+        const editorPanel = document.getElementById('editor-panel');
+        const editorContainer = document.querySelector('.editor-container');
+        let isResizing = false;
+
+        resizeGutter.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            resizeGutter.classList.add('active');
+            document.body.style.cursor = 'col-resize';
+            // Disable pointer events in editor to prevent iframe glitching during drag
+            editor.setOption("readOnly", "nocursor");
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerRect = editorContainer.getBoundingClientRect();
+            // Calculate new width relative to container left
+            let newWidth = e.clientX - containerRect.left - (resizeGutter.offsetWidth / 2);
+            // Constrain width
+            newWidth = Math.max(150, Math.min(newWidth, containerRect.width - 150));
+            editorPanel.style.width = `${newWidth}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                resizeGutter.classList.remove('active');
+                document.body.style.cursor = 'default';
+                editor.setOption("readOnly", false);
+                editor.refresh(); // Refresh CodeMirror to recalculate layout
+            }
+        });
+
+        // --- External Library Logic ---
+        document.getElementById('load-lib-btn').addEventListener('click', () => {
+            const url = document.getElementById('ext-lib-input').value.trim();
+            if (!url) return;
+            
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = () => {
+                appendOutput(`✅ Successfully loaded library from: ${url}`, 'info');
+            };
+            script.onerror = () => {
+                appendOutput(`❌ Failed to load library from: ${url}`, 'error');
+            };
+            document.head.appendChild(script);
+        });
+
+
+        // --- UI Settings Logic ---
+        let isDark = false;
+        themeToggle.addEventListener('click', () => {
+            isDark = !isDark;
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            themeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+            editor.setOption('theme', isDark ? 'dracula' : 'default');
+        });
+
+        function updateFontSettings() {
+            const family = fontSelect.value;
+            const size = fontSizeInput.value + 'px';
+            
+            const cmElement = document.querySelector('.CodeMirror');
+            if (cmElement) {
+                cmElement.style.setProperty('font-family', family, 'important');
+                cmElement.style.setProperty('font-size', size, 'important');
+                editor.refresh();
+            }
+            
+            output.style.setProperty('font-family', family, 'important');
+            output.style.setProperty('font-size', size, 'important');
+        }
+
+        fontSelect.addEventListener('change', updateFontSettings);
+        fontSizeInput.addEventListener('input', updateFontSettings);
+        updateFontSettings();
+
+        // --- Execution Logic ---
+        function appendOutput(content, type = 'log') {
+            const line = document.createElement('div');
+            line.className = `log-line log-${type}`;
+            
+            const time = new Date().toLocaleTimeString([], { hour12: false });
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'log-time';
+            timeSpan.textContent = `[${time}] `;
+            
+            const contentSpan = document.createElement('span');
+            contentSpan.className = 'log-content';
+            contentSpan.textContent = content;
+            
+            line.appendChild(timeSpan);
+            line.appendChild(contentSpan);
+            output.appendChild(line);
+            
+            output.scrollTop = output.scrollHeight;
+        }
+
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog(...args);
+            const content = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
+            ).join(' ');
+            appendOutput(content, 'log');
+        };
+
+        const originalError = console.error;
+        console.error = function(...args) {
+            originalError(...args);
+            appendOutput(args.join(' '), 'error');
+        };
+
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            originalWarn(...args);
+            appendOutput(args.join(' '), 'warn');
+        };
+
+        const originalInfo = console.info;
+        console.info = function(...args) {
+            originalInfo(...args);
+            appendOutput(args.join(' '), 'info');
+        };
+
+        clearConsoleBtn.addEventListener('click', () => {
+            output.innerHTML = '';
+        });
+
+        runBtn.addEventListener('click', () => {
+            const separator = document.createElement('div');
+            separator.className = 'run-separator';
+            separator.innerHTML = '<span>✏️ scribbling...</span>';
+            output.appendChild(separator);
+            output.scrollTop = output.scrollHeight;
+
+            const lang = langSelect.value;
+            const code = editor.getValue();
+            
+            try {
+                let jsCode = code;
+                if (lang === 'typescript') {
+                    jsCode = ts.transpile(code);
+                }
+                
+                const result = new Function(jsCode)();
+                if (result !== undefined) {
+                    appendOutput(`Result: ${result}`, 'return');
+                }
+            } catch (err) {
+                let lineInfo = '';
+                if (err.stack) {
+                    let match = err.stack.match(/<anonymous>:(\d+):\d+/);
+                    if (!match) match = err.stack.match(/Function:(\d+):\d+/);
+                    if (match) {
+                        const lineNum = Math.max(1, parseInt(match[1], 10) - 2);
+                        lineInfo = `[Line ${lineNum}]`;
+                    }
+                }
+                appendOutput(`Oops! ${lineInfo} - ${err.message}`, 'error');
+            }
+        });
+
+        window.addEventListener('error', function(event) {
+            appendOutput(`Oops! Uncaught - ${event.message}`, 'error');
+        });
+
+        window.addEventListener('unhandledrejection', function(event) {
+            appendOutput(`Oops! Unhandled Promise - ${event.reason}`, 'error');
+        });
+
+        // --- Storage Logic ---
+        function loadSnippetsList() {
+            const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
+            while(loadSelect.options.length > 1) {
+                loadSelect.remove(1);
+            }
+            for (const name in snippets) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                loadSelect.appendChild(opt);
+            }
+        }
+
+        saveBtn.addEventListener('click', () => {
+            const name = snippetNameInput.value.trim();
+            if (!name) {
+                alert('Please enter a note name to save.');
+                return;
+            }
+            
+            const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
+            snippets[name] = {
+                code: editor.getValue(),
+                lang: langSelect.value
+            };
+            
+            localStorage.setItem('code_snippets', JSON.stringify(snippets));
+            loadSnippetsList();
+            alert(`Note "${name}" saved in your sketchbook!`);
+        });
+
+        loadSelect.addEventListener('change', (e) => {
+            const name = e.target.value;
+            if (!name) return;
+            
+            const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
+            const snippet = snippets[name];
+            
+            if (snippet) {
+                editor.setValue(snippet.code);
+                langSelect.value = snippet.lang;
+                snippetNameInput.value = name;
+            }
+        });
+
+        deleteBtn.addEventListener('click', () => {
+            const name = loadSelect.value;
+            if (!name) {
+                alert('Please select a note to erase.');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to erase "${name}"?`)) {
+                const snippets = JSON.parse(localStorage.getItem('code_snippets') || '{}');
+                delete snippets[name];
+                localStorage.setItem('code_snippets', JSON.stringify(snippets));
+                loadSnippetsList();
+                
+                loadSelect.value = '';
+                snippetNameInput.value = '';
+            }
+        });
+
+        loadSnippetsList();
+    </script>
+</body>
+</html>
